@@ -1,50 +1,83 @@
-# Welcome to your Expo app 👋
+📱 Sapa UMKM
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Sapa UMKM adalah aplikasi mobile yang dikembangkan menggunakan React Native (Expo) untuk membantu pelaku Usaha Mikro, Kecil, dan Menengah (UMKM) dalam mengakses berbagai layanan pendukung usaha — mulai dari perizinan, pendanaan, pelatihan, pemasaran, hingga logistik.
 
-## Get started
+Aplikasi ini bertujuan untuk menjadi platform terpadu yang mempermudah UMKM mendapatkan informasi dan layanan pemerintah maupun lembaga pendukung secara cepat dan efisien.
 
-1. Install dependencies
+🚀 Fitur Utama
 
-   ```bash
-   npm install
-   ```
+🔐 Autentikasi & Akun Pengguna
+Pengguna dapat masuk untuk mengakses layanan yang dipersonalisasi.
 
-2. Start the app
+🌟 Rekomendasi Layanan
+Menampilkan berbagai layanan unggulan UMKM seperti pendanaan, pelatihan, dan perizinan.
 
-   ```bash
-   npx expo start
-   ```
+📰 Banner Informasi
+Slide banner berisi promosi dan pengumuman penting terkait program UMKM.
 
-In the output, you'll find options to open the app in a
+🧭 Navigasi Layanan Wirausaha
+Tersusun dalam beberapa fase perjalanan bisnis — dari awal perizinan hingga pengembangan usaha.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+🧩 UI/UX Modern
+Tampilan bergaya dark theme dengan desain bersih dan elegan agar nyaman digunakan oleh semua kalangan.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+🛠️ Teknologi yang Digunakan
 
-## Get a fresh project
+Expo
+ – Framework React Native untuk pengembangan lintas platform
 
-When you're ready, run:
+React Native
+ – Untuk membangun antarmuka aplikasi
 
-```bash
-npm run reset-project
-```
+TypeScript
+ – Menjamin keamanan tipe dan stabilitas kode
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+@expo/vector-icons
+ – Untuk ikon-ikon antarmuka
 
-## Learn more
+React Navigation
+ – Manajemen navigasi antar halaman
 
-To learn more about developing your project with Expo, look at the following resources:
+🧩 Struktur Proyek
+SapaUMKM/
+│
+├── app/
+│   ├── (tabs)/home.tsx        # Halaman utama dengan banner dan rekomendasi layanan
+│   ├── _layout.tsx            # Struktur layout utama aplikasi
+│   └── ...                    # Halaman lainnya
+│
+├── assets/
+│   └── images/                # Gambar banner & ikon
+│
+└── README.md                  # Dokumentasi proyek ini
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+⚙️ Cara Menjalankan
 
-## Join the community
+Install dependencies:
 
-Join our community of developers creating universal apps.
+npm install
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+Jalankan aplikasi:
+
+npx expo start
+
+
+Pilih salah satu opsi:
+
+Jalankan di Android emulator
+
+Jalankan di Expo Go (smartphone)
+
+Jalankan di Web browser
+
+🧠 Tujuan Pengembangan
+
+Aplikasi ini dikembangkan sebagai proyek mata kuliah Pengembangan Aplikasi Bergerak di Telkom University, dengan fokus pada peningkatan keterhubungan digital UMKM agar lebih mudah dalam mengakses layanan pemerintah maupun lembaga pendukung.
+
+👥 Pengembang
+
+Rafi Abdul Fatah
+Mahasiswa Program Studi S1 Sistem Informasi,
+Fakultas Informatika – Telkom University
+
