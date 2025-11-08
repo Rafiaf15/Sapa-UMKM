@@ -427,6 +427,7 @@ export default function ProfileScreen() {
 
       {/* Bottom Spacing */}
       <View style={{ height: 100 }} />
+
     </ScrollView>
   );
 }

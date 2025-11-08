@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -81,10 +83,161 @@ const events = [
 
 export default function EventScreen() {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [registeredEvents, setRegisteredEvents] = useState<number[]>([]);
+  const [eventSlots, setEventSlots] = useState<{[key: number]: number}>({});
+
+  useEffect(() => {
+    checkLoginStatus();
+    loadRegisteredEvents();
+    loadEventSlots();
+  }, []);
+
+  const checkLoginStatus = async () => {
+    try {
+      const loggedIn = await AsyncStorage.getItem('isLoggedIn');
+      const isUserLoggedIn = loggedIn === 'true';
+      setIsLoggedIn(isUserLoggedIn);
+      
+      // If not logged in, clear registered events
+      if (!isUserLoggedIn) {
+        setRegisteredEvents([]);
+      }
+    } catch (error) {
+      console.error('Error checking login status:', error);
+    }
+  };
+
+  const loadRegisteredEvents = async () => {
+    try {
+      const loggedIn = await AsyncStorage.getItem('isLoggedIn');
+      
+      // Only load registered events if user is logged in
+      if (loggedIn === 'true') {
+        const registered = await AsyncStorage.getItem('registeredEvents');
+        if (registered) {
+          setRegisteredEvents(JSON.parse(registered));
+        }
+      } else {
+        setRegisteredEvents([]);
+      }
+    } catch (error) {
+      console.error('Error loading registered events:', error);
+    }
+  };
+
+  const loadEventSlots = async () => {
+    try {
+      const slots = await AsyncStorage.getItem('eventSlots');
+      if (slots) {
+        setEventSlots(JSON.parse(slots));
+      } else {
+        // Initialize slots from default events
+        const initialSlots: {[key: number]: number} = {};
+        events.forEach(event => {
+          initialSlots[event.id] = event.slots;
+        });
+        setEventSlots(initialSlots);
+        await AsyncStorage.setItem('eventSlots', JSON.stringify(initialSlots));
+      }
+    } catch (error) {
+      console.error('Error loading event slots:', error);
+    }
+  };
+
+  const handleRegisterEvent = async (eventId: number, eventTitle: string) => {
+    if (!isLoggedIn) {
+      Alert.alert(
+        'Login Diperlukan',
+        'Anda harus login terlebih dahulu untuk mendaftar event',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { 
+            text: 'Login', 
+            onPress: () => router.push('/login/login') 
+          }
+        ]
+      );
+      return;
+    }
+
+    // Check if already registered
+    if (registeredEvents.includes(eventId)) {
+      Alert.alert('Info', 'Anda sudah terdaftar di event ini');
+      return;
+    }
+
+    // Check if slots available
+    const currentSlots = eventSlots[eventId] || 0;
+    if (currentSlots <= 0) {
+      Alert.alert('Maaf', 'Kursi untuk event ini sudah penuh');
+      return;
+    }
+
+    Alert.alert(
+      'Konfirmasi Pendaftaran',
+      `Apakah Anda yakin ingin mendaftar untuk event "${eventTitle}"?`,
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Daftar',
+          onPress: async () => {
+            try {
+              // Add to registered events
+              const newRegistered = [...registeredEvents, eventId];
+              await AsyncStorage.setItem('registeredEvents', JSON.stringify(newRegistered));
+              setRegisteredEvents(newRegistered);
+
+              // Decrease slots
+              const newSlots = { ...eventSlots, [eventId]: currentSlots - 1 };
+              await AsyncStorage.setItem('eventSlots', JSON.stringify(newSlots));
+              setEventSlots(newSlots);
+
+              Alert.alert(
+                'Berhasil! 🎉',
+                'Anda berhasil mendaftar event. Cek email untuk detail lebih lanjut.',
+                [{ text: 'OK' }]
+              );
+            } catch (error) {
+              Alert.alert('Error', 'Gagal mendaftar event. Silakan coba lagi.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleFeaturedEventRegister = () => {
+    handleRegisterEvent(0, 'Bootcamp UMKM Go Digital');
+  };
+
+  const handleFabPress = () => {
+    if (isLoggedIn) {
+      Alert.alert(
+        'Event Saya',
+        `Anda terdaftar di ${registeredEvents.length} event`,
+        [{ text: 'OK' }]
+      );
+    } else {
+      Alert.alert(
+        'Login Diperlukan',
+        'Login untuk melihat event yang Anda daftarkan',
+        [
+          { text: 'Batal', style: 'cancel' },
+          { text: 'Login', onPress: () => router.push('/login/login') }
+        ]
+      );
+    }
+  };
 
   const filteredEvents = selectedCategory === 'Semua' 
     ? events 
     : events.filter(event => event.type === selectedCategory);
+
+  // Get current slots for each event
+  const getEventSlots = (eventId: number, defaultSlots: number) => {
+    return eventSlots[eventId] !== undefined ? eventSlots[eventId] : defaultSlots;
+  };
 
   return (
     <View style={styles.container}>
@@ -106,16 +259,16 @@ export default function EventScreen() {
           <View style={styles.statItem}>
             <Ionicons name="calendar" size={24} color="#667eea" />
             <View style={styles.statTextContainer}>
-              <Text style={styles.statNumber}>24</Text>
-              <Text style={styles.statLabel}>Event Bulan Ini</Text>
+              <Text style={styles.statNumber}>{events.length}</Text>
+              <Text style={styles.statLabel}>Event Tersedia</Text>
             </View>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Ionicons name="people" size={24} color="#43e97b" />
+            <Ionicons name="checkmark-circle" size={24} color="#43e97b" />
             <View style={styles.statTextContainer}>
-              <Text style={styles.statNumber}>1.2K</Text>
-              <Text style={styles.statLabel}>Peserta Aktif</Text>
+              <Text style={styles.statNumber}>{registeredEvents.length}</Text>
+              <Text style={styles.statLabel}>Event Terdaftar</Text>
             </View>
           </View>
         </View>
@@ -157,7 +310,11 @@ export default function EventScreen() {
               <Ionicons name="star" size={14} color="#FFD700" />
               <Text style={styles.featuredBadgeText}>Featured Event</Text>
             </View>
-            <TouchableOpacity style={styles.featuredCard} activeOpacity={0.9}>
+            <TouchableOpacity 
+              style={styles.featuredCard} 
+              activeOpacity={0.9}
+              onPress={handleFeaturedEventRegister}
+            >
               <View style={styles.featuredGradient}>
                 <View style={styles.featuredContent}>
                   <View style={styles.featuredIcon}>
@@ -177,7 +334,10 @@ export default function EventScreen() {
                       <Text style={styles.featuredMetaText}>Jakarta</Text>
                     </View>
                   </View>
-                  <TouchableOpacity style={styles.featuredButton}>
+                  <TouchableOpacity 
+                    style={styles.featuredButton}
+                    onPress={handleFeaturedEventRegister}
+                  >
                     <Text style={styles.featuredButtonText}>Daftar Sekarang</Text>
                     <Ionicons name="arrow-forward" size={16} color="#fff" />
                   </TouchableOpacity>
@@ -196,89 +356,108 @@ export default function EventScreen() {
             <Text style={styles.sectionCount}>({filteredEvents.length})</Text>
           </View>
 
-          {filteredEvents.map((event) => (
-            <TouchableOpacity
-              key={event.id}
-              style={styles.eventCard}
-              activeOpacity={0.8}
-            >
-              {/* Event Header */}
-              <View style={styles.eventHeader}>
-                <View style={[styles.eventIcon, { backgroundColor: event.color + '20' }]}>
-                  <Text style={styles.eventIconText}>{event.icon}</Text>
-                </View>
-                <View style={styles.eventBadge}>
-                  <Text style={styles.eventBadgeText}>{event.type}</Text>
-                </View>
-              </View>
-
-              {/* Event Title */}
-              <Text style={styles.eventTitle}>{event.title}</Text>
-
-              {/* Event Meta Info */}
-              <View style={styles.eventMetaContainer}>
-                <View style={styles.eventMetaRow}>
-                  <Ionicons name="calendar-outline" size={16} color="rgba(255,255,255,0.6)" />
-                  <Text style={styles.eventMetaText}>{event.date}</Text>
-                  <Text style={styles.eventMetaDot}>•</Text>
-                  <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.6)" />
-                  <Text style={styles.eventMetaText}>{event.time}</Text>
-                </View>
-                <View style={styles.eventMetaRow}>
-                  <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.6)" />
-                  <Text style={styles.eventMetaText} numberOfLines={1}>
-                    {event.location}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Event Footer */}
-              <View style={styles.eventFooter}>
-                <View style={styles.eventFooterLeft}>
-                  <View style={styles.priceTag}>
-                    <Ionicons name="pricetag" size={14} color="#43e97b" />
-                    <Text style={styles.priceText}>{event.price}</Text>
+          {filteredEvents.map((event) => {
+            const currentSlots = getEventSlots(event.id, event.slots);
+            const isRegistered = registeredEvents.includes(event.id);
+            
+            return (
+              <TouchableOpacity
+                key={event.id}
+                style={styles.eventCard}
+                activeOpacity={0.8}
+              >
+                {/* Event Header */}
+                <View style={styles.eventHeader}>
+                  <View style={[styles.eventIcon, { backgroundColor: event.color + '20' }]}>
+                    <Text style={styles.eventIconText}>{event.icon}</Text>
                   </View>
-                  <View style={[
-                    styles.slotsTag,
-                    event.slots <= 10 && styles.slotsTagUrgent,
-                  ]}>
-                    <Ionicons 
-                      name="people" 
-                      size={14} 
-                      color={event.slots <= 10 ? '#fa709a' : '#4facfe'} 
-                    />
-                    <Text style={[
-                      styles.slotsText,
-                      event.slots <= 10 && styles.slotsTextUrgent,
-                    ]}>
-                      {event.slots} kursi tersisa
+                  <View style={styles.eventBadge}>
+                    <Text style={styles.eventBadgeText}>{event.type}</Text>
+                  </View>
+                </View>
+
+                {/* Event Title */}
+                <Text style={styles.eventTitle}>{event.title}</Text>
+
+                {/* Event Meta Info */}
+                <View style={styles.eventMetaContainer}>
+                  <View style={styles.eventMetaRow}>
+                    <Ionicons name="calendar-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.eventMetaText}>{event.date}</Text>
+                    <Text style={styles.eventMetaDot}>•</Text>
+                    <Ionicons name="time-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.eventMetaText}>{event.time}</Text>
+                  </View>
+                  <View style={styles.eventMetaRow}>
+                    <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.6)" />
+                    <Text style={styles.eventMetaText} numberOfLines={1}>
+                      {event.location}
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity 
-                  style={[styles.registerButton, { backgroundColor: event.color }]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.registerButtonText}>Daftar</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#fff" />
-                </TouchableOpacity>
-              </View>
 
-              {/* Progress Bar */}
-              <View style={styles.progressBarContainer}>
-                <View 
-                  style={[
-                    styles.progressBar, 
-                    { 
-                      width: `${((event.maxSlots - event.slots) / event.maxSlots) * 100}%`,
-                      backgroundColor: event.color,
-                    }
-                  ]} 
-                />
-              </View>
-            </TouchableOpacity>
-          ))}
+                {/* Event Footer */}
+                <View style={styles.eventFooter}>
+                  <View style={styles.eventFooterLeft}>
+                    <View style={styles.priceTag}>
+                      <Ionicons name="pricetag" size={14} color="#43e97b" />
+                      <Text style={styles.priceText}>{event.price}</Text>
+                    </View>
+                    <View style={[
+                      styles.slotsTag,
+                      currentSlots <= 10 && styles.slotsTagUrgent,
+                    ]}>
+                      <Ionicons 
+                        name="people" 
+                        size={14} 
+                        color={currentSlots <= 10 ? '#fa709a' : '#4facfe'} 
+                      />
+                      <Text style={[
+                        styles.slotsText,
+                        currentSlots <= 10 && styles.slotsTextUrgent,
+                      ]}>
+                        {currentSlots} kursi tersisa
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity 
+                    style={[
+                      styles.registerButton, 
+                      { 
+                        backgroundColor: isRegistered ? '#43e97b' : event.color,
+                        opacity: currentSlots <= 0 ? 0.5 : 1
+                      }
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => handleRegisterEvent(event.id, event.title)}
+                    disabled={currentSlots <= 0}
+                  >
+                    <Text style={styles.registerButtonText}>
+                      {isRegistered ? 'Terdaftar' : currentSlots <= 0 ? 'Penuh' : 'Daftar'}
+                    </Text>
+                    {isRegistered ? (
+                      <Ionicons name="checkmark-circle" size={14} color="#fff" />
+                    ) : (
+                      <Ionicons name="arrow-forward" size={14} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Progress Bar */}
+                <View style={styles.progressBarContainer}>
+                  <View 
+                    style={[
+                      styles.progressBar, 
+                      { 
+                        width: `${((event.maxSlots - currentSlots) / event.maxSlots) * 100}%`,
+                        backgroundColor: event.color,
+                      }
+                    ]} 
+                  />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Empty State */}
@@ -293,12 +472,21 @@ export default function EventScreen() {
         )}
 
         {/* Bottom Spacing */}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
+      <TouchableOpacity 
+        style={styles.fab} 
+        activeOpacity={0.9}
+        onPress={handleFabPress}
+      >
         <Ionicons name="calendar" size={24} color="#fff" />
+        {registeredEvents.length > 0 && (
+          <View style={styles.fabBadge}>
+            <Text style={styles.fabBadgeText}>{registeredEvents.length}</Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -658,5 +846,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 8,
+  },
+  fabBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fa709a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#0a0e27',
+  },
+  fabBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
