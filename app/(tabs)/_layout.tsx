@@ -11,7 +11,7 @@ export default function TabsLayout() {
         headerShown: true,
         tabBarActiveTintColor: '#667eea',
         tabBarInactiveTintColor: 'rgba(255,255,255,0.5)',
-        tabBarStyle: { 
+        tabBarStyle: {
           backgroundColor: Platform.OS === 'ios' ? 'transparent' : '#0a0e27',
           borderTopWidth: 1,
           borderTopColor: 'rgba(102, 126, 234, 0.2)',
@@ -40,15 +40,15 @@ export default function TabsLayout() {
             />
           ) : null
         ),
-        headerStyle: { 
+        headerStyle: {
           backgroundColor: '#0a0e27',
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 1,
           borderBottomColor: 'rgba(102, 126, 234, 0.2)',
         },
-        headerTitleStyle: { 
-          color: '#fff', 
+        headerTitleStyle: {
+          color: '#fff',
           fontWeight: '700',
           fontSize: 20,
         },
@@ -68,10 +68,10 @@ export default function TabsLayout() {
         options={{
           title: 'Beranda',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? "home" : "home-outline"} 
-              color={color} 
-              size={focused ? size + 2 : size} 
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              color={color}
+              size={focused ? size + 2 : size}
             />
           ),
         }}
@@ -81,10 +81,10 @@ export default function TabsLayout() {
         options={{
           title: 'Layanan',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? "briefcase" : "briefcase-outline"} 
-              color={color} 
-              size={focused ? size + 2 : size} 
+            <Ionicons
+              name={focused ? "briefcase" : "briefcase-outline"}
+              color={color}
+              size={focused ? size + 2 : size}
             />
           ),
         }}
@@ -94,10 +94,10 @@ export default function TabsLayout() {
         options={{
           title: 'Event',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? "calendar" : "calendar-outline"} 
-              color={color} 
-              size={focused ? size + 2 : size} 
+            <Ionicons
+              name={focused ? "calendar" : "calendar-outline"}
+              color={color}
+              size={focused ? size + 2 : size}
             />
           ),
         }}
@@ -107,12 +107,20 @@ export default function TabsLayout() {
         options={{
           title: 'Profil',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? "person" : "person-outline"} 
-              color={color} 
-              size={focused ? size + 2 : size} 
+            <Ionicons
+              name={focused ? "person" : "person-outline"}
+              color={color}
+              size={focused ? size + 2 : size}
             />
           ),
+        }}
+      />
+      // Di app/forms/_layout.tsx atau file routing yang sesuai
+      <Tabs.Screen
+        name="update-profile"
+        options={{
+          title: 'Update Profil UMKM',
+          headerShown: false,
         }}
       />
     </Tabs>

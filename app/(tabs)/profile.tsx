@@ -1,18 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity,
-  Alert,
-  Platform
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+// Interface untuk data UMKM
+interface UMKMProfile {
+  businessName: string;
+  businessType: string;
+  businessScale: string;
+  businessAddress: string;
+  establishmentYear: string;
+  businessField: string;
+  revenue: string;
+  employeeCount: string;
+  phone: string;
+  email: string;
+  website: string;
+  socialMedia: string;
+  businessDescription: string;
+}
 
 export default function ProfileScreen() {
   const [name, setName] = useState('');
@@ -22,6 +38,7 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [umkmData, setUmkmData] = useState<UMKMProfile | null>(null);
 
   useEffect(() => {
     checkLoginAndLoadProfile();
@@ -33,7 +50,7 @@ export default function ProfileScreen() {
       
       if (loggedIn === 'true') {
         setIsLoggedIn(true);
-        loadProfile();
+        await loadProfile();
       } else {
         setIsLoggedIn(false);
       }
@@ -44,16 +61,31 @@ export default function ProfileScreen() {
 
   const loadProfile = async () => {
     try {
-      const [n, e, p, b] = await Promise.all([
-        AsyncStorage.getItem('profile.name'),
-        AsyncStorage.getItem('profile.email'),
-        AsyncStorage.getItem('profile.phone'),
-        AsyncStorage.getItem('profile.business'),
-      ]);
-      if (n) setName(n);
-      if (e) setEmail(e);
-      if (p) setPhone(p);
-      if (b) setBusiness(b);
+      // Coba load dari umkmProfile terlebih dahulu (data dari form pembaruan)
+      const umkmProfile = await AsyncStorage.getItem('umkmProfile');
+      
+      if (umkmProfile) {
+        const parsedUmkmData = JSON.parse(umkmProfile);
+        setUmkmData(parsedUmkmData);
+        
+        // Set data dari umkmProfile ke state
+        setName(parsedUmkmData.businessName || '');
+        setEmail(parsedUmkmData.email || '');
+        setPhone(parsedUmkmData.phone || '');
+        setBusiness(parsedUmkmData.businessName || '');
+      } else {
+        // Fallback ke data profile lama
+        const [n, e, p, b] = await Promise.all([
+          AsyncStorage.getItem('profile.name'),
+          AsyncStorage.getItem('profile.email'),
+          AsyncStorage.getItem('profile.phone'),
+          AsyncStorage.getItem('profile.business'),
+        ]);
+        if (n) setName(n);
+        if (e) setEmail(e);
+        if (p) setPhone(p);
+        if (b) setBusiness(b);
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
     }
@@ -67,12 +99,25 @@ export default function ProfileScreen() {
 
     setIsSaving(true);
     try {
+      // Simpan ke kedua sistem untuk kompatibilitas
       await Promise.all([
         AsyncStorage.setItem('profile.name', name),
         AsyncStorage.setItem('profile.email', email),
         AsyncStorage.setItem('profile.phone', phone),
         AsyncStorage.setItem('profile.business', business),
       ]);
+      
+      // Juga update umkmProfile jika ada
+      if (umkmData) {
+        const updatedUmkmData = {
+          ...umkmData,
+          businessName: name,
+          email: email,
+          phone: phone,
+        };
+        await AsyncStorage.setItem('umkmProfile', JSON.stringify(updatedUmkmData));
+        setUmkmData(updatedUmkmData);
+      }
       
       // Update user data in users array
       const existingUsers = await AsyncStorage.getItem('users');
@@ -148,7 +193,7 @@ export default function ProfileScreen() {
     { icon: 'information-circle', label: 'Tentang Aplikasi', color: '#43e97b' },
   ];
 
-  // If not logged in, show login prompt
+  // Jika tidak login, tampilkan prompt login
   if (!isLoggedIn) {
     return (
       <View style={styles.container}>
@@ -223,19 +268,31 @@ export default function ProfileScreen() {
         <Text style={styles.profileName}>{name || 'Pelaku UMKM'}</Text>
         <Text style={styles.profileEmail}>{email || 'user@umkm.id'}</Text>
         
-        <TouchableOpacity 
-          style={styles.editProfileButton}
-          onPress={() => setIsEditing(!isEditing)}
-        >
-          <Ionicons 
-            name={isEditing ? "close-circle" : "create"} 
-            size={16} 
-            color="#fff" 
-          />
-          <Text style={styles.editProfileButtonText}>
-            {isEditing ? 'Batal Edit' : 'Edit Profil'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.profileActions}>
+          <TouchableOpacity 
+            style={styles.editProfileButton}
+            onPress={() => setIsEditing(!isEditing)}
+          >
+            <Ionicons 
+              name={isEditing ? "close-circle" : "create"} 
+              size={16} 
+              color="#fff" 
+            />
+            <Text style={styles.editProfileButtonText}>
+              {isEditing ? 'Batal Edit' : 'Edit Profil'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.updateBusinessButton}
+            onPress={() => router.push('/forms/update-profil-form' as any)}
+          >
+            <MaterialCommunityIcons name="store-edit" size={16} color="#fff" />
+            <Text style={styles.updateBusinessButtonText}>
+              Data UMKM
+            </Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Stats Card */}
@@ -313,20 +370,6 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nama Usaha</Text>
-            <View style={styles.inputContainer}>
-              <MaterialCommunityIcons name="store-outline" size={20} color="rgba(255,255,255,0.5)" />
-              <TextInput
-                value={business}
-                onChangeText={setBusiness}
-                placeholder="Nama usaha Anda"
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                style={styles.input}
-              />
-            </View>
-          </View>
-
           <TouchableOpacity 
             style={styles.saveButton}
             onPress={saveProfile}
@@ -382,15 +425,84 @@ export default function ProfileScreen() {
               </View>
             </View>
           </View>
+        </View>
+      )}
 
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconContainer}>
-                <MaterialCommunityIcons name="store" size={20} color="#43e97b" />
+      {/* Section Data UMKM */}
+      {umkmData && (
+        <View style={styles.umkmSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Data UMKM</Text>
+            <TouchableOpacity 
+              style={styles.editUmkmButton}
+              onPress={() => router.push('/forms/update-profile' as any)}
+            >
+              <Ionicons name="pencil" size={16} color="#4895ef" />
+              <Text style={styles.editUmkmButtonText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.umkmGrid}>
+            <View style={styles.umkmCard}>
+              <View style={styles.umkmIconContainer}>
+                <MaterialCommunityIcons name="store" size={24} color="#4895ef" />
               </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Nama Usaha</Text>
-                <Text style={styles.infoValue}>{business || '-'}</Text>
+              <Text style={styles.umkmLabel}>Jenis Usaha</Text>
+              <Text style={styles.umkmValue}>{umkmData.businessType || '-'}</Text>
+            </View>
+
+            <View style={styles.umkmCard}>
+              <View style={styles.umkmIconContainer}>
+                <Ionicons name="stats-chart" size={24} color="#43e97b" />
+              </View>
+              <Text style={styles.umkmLabel}>Skala Usaha</Text>
+              <Text style={styles.umkmValue}>{umkmData.businessScale || '-'}</Text>
+            </View>
+
+            <View style={styles.umkmCard}>
+              <View style={styles.umkmIconContainer}>
+                <Ionicons name="business" size={24} color="#f093fb" />
+              </View>
+              <Text style={styles.umkmLabel}>Bidang Usaha</Text>
+              <Text style={styles.umkmValue}>{umkmData.businessField || '-'}</Text>
+            </View>
+
+            <View style={styles.umkmCard}>
+              <View style={styles.umkmIconContainer}>
+                <Ionicons name="calendar" size={24} color="#ff9966" />
+              </View>
+              <Text style={styles.umkmLabel}>Tahun Berdiri</Text>
+              <Text style={styles.umkmValue}>{umkmData.establishmentYear || '-'}</Text>
+            </View>
+          </View>
+
+          {/* Detail Tambahan */}
+          <View style={styles.umkmDetailCard}>
+            <View style={styles.detailRow}>
+              <Ionicons name="location" size={20} color="#667eea" />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Alamat Usaha</Text>
+                <Text style={styles.detailValue}>{umkmData.businessAddress || '-'}</Text>
+              </View>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Ionicons name="cash" size={20} color="#43e97b" />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Omset Tahunan</Text>
+                <Text style={styles.detailValue}>
+                  {umkmData.revenue ? `Rp ${parseInt(umkmData.revenue).toLocaleString('id-ID')}` : '-'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Ionicons name="people" size={20} color="#f093fb" />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Jumlah Karyawan</Text>
+                <Text style={styles.detailValue}>
+                  {umkmData.employeeCount ? `${umkmData.employeeCount} orang` : '-'}
+                </Text>
               </View>
             </View>
           </View>
@@ -427,7 +539,6 @@ export default function ProfileScreen() {
 
       {/* Bottom Spacing */}
       <View style={{ height: 100 }} />
-
     </ScrollView>
   );
 }
@@ -549,6 +660,10 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     marginBottom: 16,
   },
+  profileActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   editProfileButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -560,6 +675,22 @@ const styles = StyleSheet.create({
   },
   editProfileButtonText: {
     color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  updateBusinessButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(72, 149, 239, 0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 149, 239, 0.3)',
+  },
+  updateBusinessButtonText: {
+    color: '#4895ef',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -691,6 +822,94 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  umkmSection: {
+    padding: 20,
+    marginTop: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  editUmkmButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(72, 149, 239, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 149, 239, 0.3)',
+  },
+  editUmkmButtonText: {
+    color: '#4895ef',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  umkmGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  umkmCard: {
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  umkmIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  umkmLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  umkmValue: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  umkmDetailCard: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 16,
+  },
+  detailContent: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 14,
     color: '#fff',
     fontWeight: '600',
   },

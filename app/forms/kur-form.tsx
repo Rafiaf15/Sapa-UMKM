@@ -1,49 +1,53 @@
 import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    Alert,
-    Platform,
+    View, Text, StyleSheet, ScrollView, TextInput,
+    TouchableOpacity, Alert, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function PendanaanForm() {
+export default function KURForm() {
     const [formData, setFormData] = useState({
         businessName: '',
-        ownerName: '',
-        businessAge: '',
-        monthlyRevenue: '',
+        businessType: '',
+        businessAddress: '',
+        businessDuration: '',
+        annualRevenue: '',
         loanAmount: '',
         loanPurpose: '',
         hasCollateral: 'tidak',
-        collateralDesc: '',
+        collateralDescription: '',
         phone: '',
         email: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const formatCurrency = (value: string) => {
-        const number = value.replace(/[^0-9]/g, '');
-        return number.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    };
+    const businessTypes = [
+        'Pertanian',
+        'Perikanan',
+        'Peternakan',
+        'Perdagangan',
+        'Industri Kecil',
+        'Jasa',
+        'Lainnya',
+    ];
+
+    const loanPurposes = [
+        'Modal Kerja',
+        'Investasi Mesin/Perlengkapan',
+        'Pengembangan Usaha',
+        'Renovasi Tempat Usaha',
+        'Penambahan Stok Barang',
+        'Lainnya',
+    ];
 
     const handleSubmit = async () => {
-        if (!formData.businessName || !formData.ownerName || !formData.loanAmount ||
+        if (!formData.businessName || !formData.businessType || !formData.businessAddress ||
+            !formData.businessDuration || !formData.annualRevenue || !formData.loanAmount ||
             !formData.loanPurpose || !formData.phone || !formData.email) {
             Alert.alert('Error', 'Mohon lengkapi semua field yang wajib diisi');
-            return;
-        }
-
-        const loanAmountNum = parseInt(formData.loanAmount.replace(/\./g, ''));
-        if (loanAmountNum < 1000000) {
-            Alert.alert('Error', 'Jumlah pinjaman minimal Rp 1.000.000');
             return;
         }
 
@@ -53,23 +57,23 @@ export default function PendanaanForm() {
             const submission = {
                 ...formData,
                 id: Date.now().toString(),
-                type: 'pendanaan',
+                type: 'kur',
                 status: 'pending',
                 submittedAt: new Date().toISOString(),
             };
 
-            const existingSubmissions = await AsyncStorage.getItem('pendanaanSubmissions');
+            const existingSubmissions = await AsyncStorage.getItem('kurSubmissions');
             const submissions = existingSubmissions ? JSON.parse(existingSubmissions) : [];
             submissions.push(submission);
-            await AsyncStorage.setItem('pendanaanSubmissions', JSON.stringify(submissions));
+            await AsyncStorage.setItem('kurSubmissions', JSON.stringify(submissions));
 
             Alert.alert(
-                'Permohonan Diterima! 💼',
-                `Nomor Registrasi: ${submission.id}\n\nTim kami akan menghubungi Anda dalam 2-5 hari kerja untuk proses verifikasi dan penilaian kelayakan.`,
+                'Pendaftaran KUR Diterima! 💰',
+                `Nomor Registrasi: ${submission.id}\n\nTim kami akan menghubungi Anda dalam 1-3 hari kerja untuk proses verifikasi dan penjelasan lebih lanjut.`,
                 [{ text: 'OK', onPress: () => router.back() }]
             );
         } catch (error) {
-            Alert.alert('Error', 'Gagal mengirim permohonan. Silakan coba lagi.');
+            Alert.alert('Error', 'Gagal mengirim pendaftaran. Silakan coba lagi.');
         } finally {
             setIsSubmitting(false);
         }
@@ -78,26 +82,26 @@ export default function PendanaanForm() {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={['rgba(240, 147, 251, 0.2)', 'rgba(245, 87, 108, 0.2)']}
+                colors={['rgba(34, 193, 195, 0.2)', 'rgba(253, 187, 45, 0.2)']}
                 style={styles.header}
             >
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerIcon}>💼</Text>
-                    <Text style={styles.headerTitle}>Pendanaan UMKM</Text>
+                    <Text style={styles.headerIcon}>💰</Text>
+                    <Text style={styles.headerTitle}>Kredit Usaha Rakyat (KUR)</Text>
                     <Text style={styles.headerSubtitle}>
-                        Akses modal usaha dari berbagai program pembiayaan
+                        Akses pembiayaan modal kerja dan investasi dengan bunga terjangkau
                     </Text>
                 </View>
             </LinearGradient>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 <View style={styles.infoBanner}>
-                    <Ionicons name="information-circle" size={24} color="#f093fb" />
+                    <Ionicons name="information-circle" size={24} color="#22c1c3" />
                     <Text style={styles.infoBannerText}>
-                        Bunga kompetitif mulai dari 0,5% per bulan. Tenor hingga 3 tahun.
+                        KUR khusus untuk UMKM dengan plafon hingga Rp 500 juta dan bunga kompetitif
                     </Text>
                 </View>
 
@@ -120,78 +124,97 @@ export default function PendanaanForm() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Nama Pemilik <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>Jenis Usaha <Text style={styles.required}>*</Text></Text>
                         <View style={styles.inputContainer}>
-                            <Ionicons name="person-outline" size={20} color="rgba(255,255,255,0.5)" />
+                            <Ionicons name="cube-outline" size={20} color="rgba(255,255,255,0.5)" />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Nama lengkap pemilik"
+                                placeholder="Pilih jenis usaha"
                                 placeholderTextColor="rgba(255,255,255,0.4)"
-                                value={formData.ownerName}
-                                onChangeText={(text) => setFormData({ ...formData, ownerName: text })}
+                                value={formData.businessType}
+                                onChangeText={(text) => setFormData({ ...formData, businessType: text })}
+                            />
+                        </View>
+                        <Text style={styles.hint}>
+                            Contoh: {businessTypes.slice(0, 3).join(', ')}
+                        </Text>
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Alamat Usaha <Text style={styles.required}>*</Text></Text>
+                        <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                            <Ionicons name="location-outline" size={20} color="rgba(255,255,255,0.5)" style={styles.textAreaIcon} />
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                placeholder="Alamat lengkap usaha"
+                                placeholderTextColor="rgba(255,255,255,0.4)"
+                                value={formData.businessAddress}
+                                onChangeText={(text) => setFormData({ ...formData, businessAddress: text })}
+                                multiline
+                                numberOfLines={3}
                             />
                         </View>
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Lama Usaha Berjalan (tahun)</Text>
+                        <Text style={styles.label}>Lama Usaha (Tahun) <Text style={styles.required}>*</Text></Text>
                         <View style={styles.inputContainer}>
-                            <Ionicons name="time-outline" size={20} color="rgba(255,255,255,0.5)" />
+                            <Ionicons name="calendar-outline" size={20} color="rgba(255,255,255,0.5)" />
                             <TextInput
                                 style={styles.input}
-                                placeholder="Contoh: 2"
+                                placeholder="Contoh: 2 tahun"
                                 placeholderTextColor="rgba(255,255,255,0.4)"
-                                value={formData.businessAge}
-                                onChangeText={(text) => setFormData({ ...formData, businessAge: text.replace(/[^0-9]/g, '') })}
-                                keyboardType="number-pad"
+                                value={formData.businessDuration}
+                                onChangeText={(text) => setFormData({ ...formData, businessDuration: text })}
                             />
                         </View>
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Omzet Per Bulan (Rp)</Text>
+                        <Text style={styles.label}>Omset Usaha (Rp/Tahun) <Text style={styles.required}>*</Text></Text>
                         <View style={styles.inputContainer}>
-                            <Ionicons name="trending-up-outline" size={20} color="rgba(255,255,255,0.5)" />
+                            <Ionicons name="cash-outline" size={20} color="rgba(255,255,255,0.5)" />
                             <Text style={styles.currencyPrefix}>Rp</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="0"
                                 placeholderTextColor="rgba(255,255,255,0.4)"
-                                value={formData.monthlyRevenue}
-                                onChangeText={(text) => setFormData({ ...formData, monthlyRevenue: formatCurrency(text) })}
+                                value={formData.annualRevenue}
+                                onChangeText={(text) => setFormData({ ...formData, annualRevenue: text.replace(/[^0-9]/g, '') })}
                                 keyboardType="number-pad"
                             />
                         </View>
                     </View>
                 </View>
 
-                {/* Pengajuan Pinjaman */}
+                {/* Informasi Kredit */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Pengajuan Pinjaman</Text>
+                    <Text style={styles.sectionTitle}>Informasi Kredit</Text>
 
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Jumlah Pinjaman (Rp) <Text style={styles.required}>*</Text></Text>
                         <View style={styles.inputContainer}>
-                            <Ionicons name="cash-outline" size={20} color="rgba(255,255,255,0.5)" />
+                            <Ionicons name="card-outline" size={20} color="rgba(255,255,255,0.5)" />
                             <Text style={styles.currencyPrefix}>Rp</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Min. 1.000.000"
+                                placeholder="0"
                                 placeholderTextColor="rgba(255,255,255,0.4)"
                                 value={formData.loanAmount}
-                                onChangeText={(text) => setFormData({ ...formData, loanAmount: formatCurrency(text) })}
+                                onChangeText={(text) => setFormData({ ...formData, loanAmount: text.replace(/[^0-9]/g, '') })}
                                 keyboardType="number-pad"
                             />
                         </View>
+                        <Text style={styles.hint}>Plafon KUR: Rp 50 juta - Rp 500 juta</Text>
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Tujuan Pinjaman <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>Tujuan Penggunaan Kredit <Text style={styles.required}>*</Text></Text>
                         <View style={[styles.inputContainer, styles.textAreaContainer]}>
                             <Ionicons name="document-text-outline" size={20} color="rgba(255,255,255,0.5)" style={styles.textAreaIcon} />
                             <TextInput
                                 style={[styles.input, styles.textArea]}
-                                placeholder="Jelaskan untuk apa dana akan digunakan"
+                                placeholder="Jelaskan untuk apa pinjaman akan digunakan"
                                 placeholderTextColor="rgba(255,255,255,0.4)"
                                 value={formData.loanPurpose}
                                 onChangeText={(text) => setFormData({ ...formData, loanPurpose: text })}
@@ -202,7 +225,7 @@ export default function PendanaanForm() {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Memiliki Jaminan?</Text>
+                        <Text style={styles.label}>Memiliki Agunan/Jaminan?</Text>
                         <View style={styles.radioGroup}>
                             <TouchableOpacity
                                 style={[styles.radioButton, formData.hasCollateral === 'ya' && styles.radioButtonActive]}
@@ -212,18 +235,18 @@ export default function PendanaanForm() {
                                     {formData.hasCollateral === 'ya' && <View style={styles.radioCircleInner} />}
                                 </View>
                                 <Text style={[styles.radioLabel, formData.hasCollateral === 'ya' && styles.radioLabelActive]}>
-                                    Ya, ada jaminan
+                                    Ya
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.radioButton, formData.hasCollateral === 'tidak' && styles.radioButtonActive]}
-                                onPress={() => setFormData({ ...formData, hasCollateral: 'tidak', collateralDesc: '' })}
+                                onPress={() => setFormData({ ...formData, hasCollateral: 'tidak', collateralDescription: '' })}
                             >
                                 <View style={styles.radioCircle}>
                                     {formData.hasCollateral === 'tidak' && <View style={styles.radioCircleInner} />}
                                 </View>
                                 <Text style={[styles.radioLabel, formData.hasCollateral === 'tidak' && styles.radioLabelActive]}>
-                                    Tidak ada jaminan
+                                    Tidak
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -231,15 +254,15 @@ export default function PendanaanForm() {
 
                     {formData.hasCollateral === 'ya' && (
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Deskripsi Jaminan</Text>
+                            <Text style={styles.label}>Deskripsi Agunan</Text>
                             <View style={[styles.inputContainer, styles.textAreaContainer]}>
                                 <Ionicons name="home-outline" size={20} color="rgba(255,255,255,0.5)" style={styles.textAreaIcon} />
                                 <TextInput
                                     style={[styles.input, styles.textArea]}
-                                    placeholder="Contoh: Sertifikat tanah, BPKB kendaraan, dll"
+                                    placeholder="Jelaskan agunan/jaminan yang dimiliki"
                                     placeholderTextColor="rgba(255,255,255,0.4)"
-                                    value={formData.collateralDesc}
-                                    onChangeText={(text) => setFormData({ ...formData, collateralDesc: text })}
+                                    value={formData.collateralDescription}
+                                    onChangeText={(text) => setFormData({ ...formData, collateralDescription: text })}
                                     multiline
                                     numberOfLines={2}
                                 />
@@ -285,10 +308,10 @@ export default function PendanaanForm() {
                 </View>
 
                 <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
-                    <LinearGradient colors={['#f093fb', '#f5576c']} style={styles.submitButtonGradient}>
+                    <LinearGradient colors={['#22c1c3', '#fdbb2d']} style={styles.submitButtonGradient}>
                         <Ionicons name="send" size={20} color="#fff" />
                         <Text style={styles.submitButtonText}>
-                            {isSubmitting ? 'Mengirim...' : 'Ajukan Pinjaman'}
+                            {isSubmitting ? 'Mengirim...' : 'Ajukan KUR'}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -309,7 +332,7 @@ const styles = StyleSheet.create({
     headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
     scrollView: { flex: 1 },
     content: { padding: 20 },
-    infoBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(240, 147, 251, 0.15)', borderRadius: 12, padding: 16, marginBottom: 24, gap: 12, borderWidth: 1, borderColor: 'rgba(240, 147, 251, 0.3)' },
+    infoBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(34, 193, 195, 0.15)', borderRadius: 12, padding: 16, marginBottom: 24, gap: 12, borderWidth: 1, borderColor: 'rgba(34, 193, 195, 0.3)' },
     infoBannerText: { flex: 1, color: 'rgba(255,255,255,0.8)', fontSize: 13, lineHeight: 18 },
     section: { marginBottom: 24 },
     sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 16 },
@@ -322,11 +345,12 @@ const styles = StyleSheet.create({
     textAreaContainer: { alignItems: 'flex-start', paddingVertical: 12 },
     textAreaIcon: { marginTop: 4 },
     textArea: { minHeight: 80, textAlignVertical: 'top' },
+    hint: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 },
     radioGroup: { gap: 12 },
     radioButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', gap: 12 },
-    radioButtonActive: { backgroundColor: 'rgba(240, 147, 251, 0.15)', borderColor: '#f093fb' },
+    radioButtonActive: { backgroundColor: 'rgba(34, 193, 195, 0.15)', borderColor: '#22c1c3' },
     radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)', justifyContent: 'center', alignItems: 'center' },
-    radioCircleInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#f093fb' },
+    radioCircleInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#22c1c3' },
     radioLabel: { flex: 1, color: 'rgba(255,255,255,0.7)', fontSize: 14 },
     radioLabelActive: { color: '#fff', fontWeight: '600' },
     submitButton: { borderRadius: 12, overflow: 'hidden', marginTop: 8 },

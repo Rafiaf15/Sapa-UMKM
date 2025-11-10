@@ -12,7 +12,7 @@ const events = [
   {
     id: 1,
     title: 'Workshop Digital Marketing untuk UMKM',
-    date: '15 Nov 2024',
+    date: '15 Feb 2025',
     time: '14:00 - 16:00',
     type: 'Workshop',
     location: 'Online via Zoom',
@@ -26,7 +26,7 @@ const events = [
   {
     id: 2,
     title: 'Pelatihan Manajemen Keuangan Bisnis',
-    date: '18 Nov 2024',
+    date: '18 Jun 2025',
     time: '09:00 - 12:00',
     type: 'Pelatihan',
     location: 'Gedung UMKM Center, Jakarta',
@@ -40,7 +40,7 @@ const events = [
   {
     id: 3,
     title: 'Webinar Ekspor Produk UMKM',
-    date: '20 Nov 2024',
+    date: '20 Aug 2025',
     time: '19:00 - 21:00',
     type: 'Webinar',
     location: 'Online via Google Meet',
@@ -54,7 +54,7 @@ const events = [
   {
     id: 4,
     title: 'Networking UMKM Food & Beverage',
-    date: '22 Nov 2024',
+    date: '22 Des 2025',
     time: '16:00 - 18:00',
     type: 'Networking',
     location: 'Cafe Kolab, Bandung',
@@ -68,7 +68,7 @@ const events = [
   {
     id: 5,
     title: 'Pelatihan Fotografi Produk',
-    date: '25 Nov 2024',
+    date: '25 Nov 2025',
     time: '13:00 - 16:00',
     type: 'Pelatihan',
     location: 'Studio Fotografi Pro, Surabaya',

@@ -1,30 +1,25 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Dimensions, 
-  FlatList, 
-  Image, 
-  Platform, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View,
-  Animated 
-} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState("fase");
   const [currentBanner, setCurrentBanner] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('');
   const scrollX = useRef(new Animated.Value(0)).current;
-  const bannerScrollRef = useRef<ScrollView>(null);
 
   type MaterialIconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -33,16 +28,15 @@ export default function HomeScreen() {
     name: string;
     icon: MaterialIconName;
     color: string;
-    route: string;
   }
 
   const services: ServiceItem[] = [
-    { id: '1', name: 'Toko Online', icon: 'storefront', color: '#667eea', route: '/(tabs)/layanan' },
-    { id: '2', name: 'Promosi', icon: 'bullhorn', color: '#f093fb', route: '/(tabs)/layanan' },
-    { id: '3', name: 'Event', icon: 'calendar-star', color: '#4facfe', route: '/(tabs)/event' },
-    { id: '4', name: 'Lokasi', icon: 'map-marker', color: '#43e97b', route: '/(tabs)/layanan' },
-    { id: '5', name: 'Pelatihan', icon: 'school', color: '#fa709a', route: '/(tabs)/event' },
-    { id: '6', name: 'Konsultasi', icon: 'account-group', color: '#30cfd0', route: '/(tabs)/layanan' },
+    { id: '1', name: 'Toko Online', icon: 'storefront', color: '#667eea' },
+    { id: '2', name: 'Promosi', icon: 'bullhorn', color: '#f093fb' },
+    { id: '3', name: 'Event', icon: 'calendar-star', color: '#4facfe' },
+    { id: '4', name: 'Lokasi', icon: 'map-marker', color: '#43e97b' },
+    { id: '5', name: 'Pelatihan', icon: 'school', color: '#fa709a' },
+    { id: '6', name: 'Konsultasi', icon: 'account-group', color: '#30cfd0' },
   ];
 
   const banners = [
@@ -65,7 +59,6 @@ export default function HomeScreen() {
     icon: keyof typeof MaterialCommunityIcons.glyphMap;
     color: string;
     description: string;
-    route: string;
   };
 
   const lifePhases: PhaseItem[] = [
@@ -73,43 +66,37 @@ export default function HomeScreen() {
       name: "Perizinan Usaha", 
       icon: "file-document-edit", 
       color: '#667eea',
-      description: 'NIB, IUMK, dll',
-      route: '/(tabs)/layanan'
+      description: 'NIB, IUMK, dll'
     },
     { 
       name: "Pendanaan", 
       icon: "cash-multiple", 
       color: '#f093fb',
-      description: 'Modal usaha',
-      route: '/(tabs)/layanan'
+      description: 'Modal usaha'
     },
     { 
       name: "Pelatihan", 
       icon: "school", 
       color: '#4facfe',
-      description: 'Workshop gratis',
-      route: '/(tabs)/event'
+      description: 'Workshop gratis'
     },
     { 
       name: "Pemasaran", 
       icon: "chart-line", 
       color: '#43e97b',
-      description: 'Digital marketing',
-      route: '/(tabs)/layanan'
+      description: 'Digital marketing'
     },
     { 
       name: "Logistik", 
       icon: "truck-delivery", 
       color: '#fa709a',
-      description: 'Pengiriman barang',
-      route: '/(tabs)/layanan'
+      description: 'Pengiriman barang'
     },
     { 
       name: "Keuangan", 
       icon: "calculator", 
       color: '#30cfd0',
-      description: 'Manajemen keuangan',
-      route: '/(tabs)/layanan'
+      description: 'Manajemen keuangan'
     },
   ];
 
@@ -118,56 +105,6 @@ export default function HomeScreen() {
     { label: 'Layanan', value: '50+', icon: 'apps' },
     { label: 'Event', value: '100+', icon: 'calendar' },
   ];
-
-  useEffect(() => {
-    checkLoginStatus();
-    startBannerAutoScroll();
-  }, []);
-
-  const checkLoginStatus = async () => {
-    try {
-      const loggedIn = await AsyncStorage.getItem('isLoggedIn');
-      const name = await AsyncStorage.getItem('profile.name');
-      
-      if (loggedIn === 'true') {
-        setIsLoggedIn(true);
-        setUserName(name || 'Pengguna');
-      }
-    } catch (error) {
-      console.error('Error checking login status:', error);
-    }
-  };
-
-  const startBannerAutoScroll = () => {
-    const interval = setInterval(() => {
-      setCurrentBanner((prev) => {
-        const next = (prev + 1) % banners.length;
-        bannerScrollRef.current?.scrollTo({
-          x: next * (width - 32),
-          animated: true,
-        });
-        return next;
-      });
-    }, 5000); // Auto scroll every 5 seconds
-
-    return () => clearInterval(interval);
-  };
-
-  const handleServicePress = (route: string) => {
-    router.push(route as any);
-  };
-
-  const handlePhasePress = (route: string) => {
-    router.push(route as any);
-  };
-
-  const handleLoginPress = () => {
-    if (isLoggedIn) {
-      router.push('/(tabs)/profile');
-    } else {
-      router.push('/login/login');
-    }
-  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -178,15 +115,10 @@ export default function HomeScreen() {
       >
         <View style={styles.welcomeContent}>
           <View>
-            <Text style={styles.welcomeGreeting}>
-              {isLoggedIn ? `Halo, ${userName}! 👋` : 'Selamat Datang! 👋'}
-            </Text>
+            <Text style={styles.welcomeGreeting}>Selamat Datang! 👋</Text>
             <Text style={styles.welcomeName}>di Sapa UMKM</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.notificationButton}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
+          <TouchableOpacity style={styles.notificationButton}>
             <Ionicons name="notifications-outline" size={24} color="#fff" />
             <View style={styles.notificationBadge}>
               <Text style={styles.notificationBadgeText}>3</Text>
@@ -211,35 +143,33 @@ export default function HomeScreen() {
       </View>
 
       {/* Card Info Login */}
-      {!isLoggedIn && (
-        <TouchableOpacity activeOpacity={0.8} onPress={handleLoginPress}>
-          <LinearGradient
-            colors={['rgba(102, 126, 234, 0.2)', 'rgba(118, 75, 162, 0.2)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cardLogin}
-          >
-            <View style={styles.cardLoginIcon}>
-              <Ionicons name="person-circle-outline" size={40} color="#667eea" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>Belum masuk akun?</Text>
-              <Text style={styles.cardSubtitle}>
-                Nikmati semua layanan Sapa UMKM dengan masuk ke akun Anda!
-              </Text>
-            </View>
-            <View style={styles.cardArrow}>
-              <Ionicons name="chevron-forward" size={24} color="#667eea" />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity activeOpacity={0.8}>
+        <LinearGradient
+          colors={['rgba(102, 126, 234, 0.2)', 'rgba(118, 75, 162, 0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.cardLogin}
+        >
+          <View style={styles.cardLoginIcon}>
+            <Ionicons name="person-circle-outline" size={40} color="#667eea" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Belum masuk akun?</Text>
+            <Text style={styles.cardSubtitle}>
+              Nikmati semua layanan Sapa UMKM dengan masuk ke akun Anda!
+            </Text>
+          </View>
+          <View style={styles.cardArrow}>
+            <Ionicons name="chevron-forward" size={24} color="#667eea" />
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
 
       {/* Rekomendasi */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Layanan Populer</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/layanan')}>
+          <TouchableOpacity>
             <Text style={styles.seeAll}>Lihat Semua →</Text>
           </TouchableOpacity>
         </View>
@@ -251,10 +181,7 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8 }}
           renderItem={({ item }) => (
-            <TouchableOpacity 
-              activeOpacity={0.8}
-              onPress={() => handleServicePress(item.route)}
-            >
+            <TouchableOpacity activeOpacity={0.8}>
               <View style={styles.serviceItem}>
                 <LinearGradient
                   colors={[item.color, item.color + 'aa']}
@@ -277,7 +204,6 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Informasi Terbaru</Text>
         <ScrollView
-          ref={bannerScrollRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
@@ -285,10 +211,6 @@ export default function HomeScreen() {
             [{ nativeEvent: { contentOffset: { x: scrollX } } }],
             { useNativeDriver: false }
           )}
-          onMomentumScrollEnd={(event) => {
-            const newIndex = Math.round(event.nativeEvent.contentOffset.x / (width - 32));
-            setCurrentBanner(newIndex);
-          }}
           scrollEventThrottle={16}
         >
           {banners.map((banner, index) => (
@@ -380,7 +302,6 @@ export default function HomeScreen() {
               key={item.name} 
               style={styles.gridItem}
               activeOpacity={0.8}
-              onPress={() => handlePhasePress(item.route)}
             >
               <View style={styles.gridItemContent}>
                 <View style={[styles.gridIconContainer, { backgroundColor: item.color + '20' }]}>
@@ -419,9 +340,7 @@ export default function HomeScreen() {
   );
 }
 
-// Styles remain the same...
 const styles = StyleSheet.create({
-  // ... (keep all existing styles)
   container: {
     flex: 1,
     backgroundColor: "#0a0e27",
