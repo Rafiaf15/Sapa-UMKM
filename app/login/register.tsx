@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -12,9 +14,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const API_URL = Platform.OS === "web" ? "http://localhost:3001" : "http://192.168.0.231:3001";
 
 export default function RegisterScreen() {
   const { width } = useWindowDimensions();
@@ -38,78 +39,98 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    // Trim dan normalize semua input
+    const trimmedName = name.trim();
+    const trimmedEmail = email.toLowerCase().trim();
+    const trimmedPhone = phone.trim();
+    const trimmedPassword = password.trim();
+    const trimmedConfirmPassword = confirmPassword.trim();
+
     // Validation
-    if (!name || !email || !phone || !password || !confirmPassword) {
+    if (!trimmedName || !trimmedEmail || !trimmedPhone || !trimmedPassword || !trimmedConfirmPassword) {
       Alert.alert("Error", "Semua field wajib diisi!");
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(trimmedEmail)) {
       Alert.alert("Error", "Format email tidak valid!");
       return;
     }
 
-    if (!validatePhone(phone)) {
+    if (!validatePhone(trimmedPhone)) {
       Alert.alert("Error", "Format nomor telepon tidak valid!");
       return;
     }
 
-    if (password.length < 6) {
+    if (trimmedPassword.length < 6) {
       Alert.alert("Error", "Password minimal 6 karakter!");
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Password dan konfirmasi password tidak cocok!");
+    if (trimmedPassword !== trimmedConfirmPassword) {
+      Alert.alert("Error", "Password tidak cocok!");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Check if email already exists
-      const existingUsers = await AsyncStorage.getItem("users");
-      const users = existingUsers ? JSON.parse(existingUsers) : [];
+      console.log("=== REGISTER START ===");
+      console.log("Sending registration to:", `${API_URL}/api/users`);
+      console.log("Data:", { 
+        name: trimmedName, 
+        email: trimmedEmail, 
+        phone: trimmedPhone 
+      });
+      
+      const res = await fetch(`${API_URL}/api/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          name: trimmedName, 
+          email: trimmedEmail, 
+          phone: trimmedPhone, 
+          password: trimmedPassword 
+        }),
+      });
 
-      const emailExists = users.some((user: any) => user.email === email);
-      if (emailExists) {
-        Alert.alert("Error", "Email sudah terdaftar!");
-        setIsLoading(false);
+      console.log("Response status:", res.status);
+
+      const data = await res.json();
+      console.log("Response data:", JSON.stringify(data, null, 2));
+      
+      if (!res.ok) {
+        console.log("Register failed:", data.error);
+        Alert.alert("Error", data.error || "Gagal membuat akun");
         return;
       }
 
-      // Create new user
-      const newUser = {
-        id: Date.now().toString(),
-        name,
-        email,
-        phone,
-        password,
-        createdAt: new Date().toISOString(),
-      };
+      console.log("Register success!");
 
-      users.push(newUser);
-      await AsyncStorage.setItem("users", JSON.stringify(users));
+      // Clear form
+      setName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setConfirmPassword("");
 
-      // Save to profile
-      await AsyncStorage.setItem("profile.name", name);
-      await AsyncStorage.setItem("profile.email", email);
-      await AsyncStorage.setItem("profile.phone", phone);
-
-      Alert.alert(
-        "Berhasil",
-        "Akun berhasil dibuat! Silakan login.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/login/login"),
+      Alert.alert("Berhasil", "Akun berhasil dibuat! Silakan login.", [
+        {
+          text: "OK",
+          onPress: () => {
+            console.log("Navigating back to login...");
+            router.back(); // Kembali ke halaman login
           },
-        ]
-      );
-    } catch (error) {
-      Alert.alert("Error", "Gagal membuat akun. Silakan coba lagi.");
+        },
+      ]);
+      
+    } catch (error: any) {
+      console.error("=== REGISTER ERROR ===");
+      console.error("Error:", error);
+      Alert.alert("Error", `Gagal membuat akun: ${error.message}\n\nPastikan server jalan di port 3001!`);
     } finally {
       setIsLoading(false);
+      console.log("=== REGISTER END ===");
     }
   };
 
@@ -283,7 +304,10 @@ export default function RegisterScreen() {
 
         {/* Login Link */}
         <TouchableOpacity
-          onPress={() => router.push("/login/login")}
+          onPress={() => {
+            console.log("Navigating to login from link...");
+            router.back();
+          }}
           style={styles.linkContainer}
         >
           <Text style={styles.linkText}>

@@ -39,6 +39,8 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [umkmData, setUmkmData] = useState<UMKMProfile | null>(null);
+  const [eventsCount, setEventsCount] = useState(0);
+  const [servicesCount, setServicesCount] = useState(0);
 
   useEffect(() => {
     checkLoginAndLoadProfile();
@@ -61,6 +63,20 @@ export default function ProfileScreen() {
 
   const loadProfile = async () => {
     try {
+      // Load data user dari currentUser (disimpan saat login)
+      const currentUserStr = await AsyncStorage.getItem('currentUser');
+      if (currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr);
+        // Set eventsCount dan servicesCount dari data user
+        setEventsCount(currentUser.eventsCount || 0);
+        setServicesCount(currentUser.servicesCount || 0);
+        
+        // Set data dasar dari currentUser
+        if (!name) setName(currentUser.name || '');
+        if (!email) setEmail(currentUser.email || '');
+        if (!phone) setPhone(currentUser.phone || '');
+      }
+      
       // Coba load dari umkmProfile terlebih dahulu (data dari form pembaruan)
       const umkmProfile = await AsyncStorage.getItem('umkmProfile');
       
@@ -68,11 +84,11 @@ export default function ProfileScreen() {
         const parsedUmkmData = JSON.parse(umkmProfile);
         setUmkmData(parsedUmkmData);
         
-        // Set data dari umkmProfile ke state
-        setName(parsedUmkmData.businessName || '');
-        setEmail(parsedUmkmData.email || '');
-        setPhone(parsedUmkmData.phone || '');
-        setBusiness(parsedUmkmData.businessName || '');
+        // Set data dari umkmProfile ke state (override jika ada)
+        if (parsedUmkmData.businessName) setName(parsedUmkmData.businessName);
+        if (parsedUmkmData.email) setEmail(parsedUmkmData.email);
+        if (parsedUmkmData.phone) setPhone(parsedUmkmData.phone);
+        if (parsedUmkmData.businessName) setBusiness(parsedUmkmData.businessName);
       } else {
         // Fallback ke data profile lama
         const [n, e, p, b] = await Promise.all([
@@ -81,10 +97,10 @@ export default function ProfileScreen() {
           AsyncStorage.getItem('profile.phone'),
           AsyncStorage.getItem('profile.business'),
         ]);
-        if (n) setName(n);
-        if (e) setEmail(e);
-        if (p) setPhone(p);
-        if (b) setBusiness(b);
+        if (n && !name) setName(n);
+        if (e && !email) setEmail(e);
+        if (p && !phone) setPhone(p);
+        if (b && !business) setBusiness(b);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -301,7 +317,7 @@ export default function ProfileScreen() {
           <View style={[styles.statIconContainer, { backgroundColor: 'rgba(102, 126, 234, 0.2)' }]}>
             <Ionicons name="briefcase" size={20} color="#667eea" />
           </View>
-          <Text style={styles.statValue}>5</Text>
+          <Text style={styles.statValue}>{servicesCount}</Text>
           <Text style={styles.statLabel}>Layanan Digunakan</Text>
         </View>
         <View style={styles.statDivider} />
@@ -309,7 +325,7 @@ export default function ProfileScreen() {
           <View style={[styles.statIconContainer, { backgroundColor: 'rgba(67, 233, 123, 0.2)' }]}>
             <Ionicons name="calendar" size={20} color="#43e97b" />
           </View>
-          <Text style={styles.statValue}>3</Text>
+          <Text style={styles.statValue}>{eventsCount}</Text>
           <Text style={styles.statLabel}>Event Diikuti</Text>
         </View>
       </View>

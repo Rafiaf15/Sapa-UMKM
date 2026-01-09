@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 export default function TabsLayout() {
   return (
     <Tabs
+      initialRouteName="home"
       screenOptions={{
         headerShown: true,
         tabBarActiveTintColor: '#667eea',
